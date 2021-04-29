@@ -15,6 +15,12 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     public TMP_InputField userIdText;
     public TMP_InputField roomNameText;
 
+    // 룸 목록 저장하기 위한 딕셔너리 자료형
+    private Dictionary<string, GameObject> roomDict = new Dictionary<string, GameObject>();
+    // 룸을 표시할 프리팹
+    public GameObject roomPrefab;
+    // Room Prefab이 차일드화 시킬 부모 Object
+    public Transform scrollContent;
 
     void Awake()
     {
@@ -93,6 +99,46 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         // base.OnJoinedRoom();
     }
 
+    // Room List 수신 (룸 목록이 갱신 될 때마다 호출되는 Call Back Function)
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        GameObject tempRoom = null;
+
+        foreach (RoomInfo room in roomList)
+        {
+            Debug.Log($"Room Name : {room.Name}, {room.PlayerCount}/{room.MaxPlayers}");
+            // 룸 삭제된 경우 => 딕셔너리에서 삭제, RoomItem 프리팹 삭제
+            if (room.RemovedFromList == true)
+            {
+                // 딕셔너리에서 삭제된 room 오브젝트 추출
+                roomDict.TryGetValue(room.Name, out tempRoom);
+                // 오브젝트 삭제
+                Destroy(tempRoom);
+                // 딕셔너리에서 해당 room 삭제
+                roomDict.Remove(room.Name);
+            }
+            else // 룸 정보가 갱신(변경)
+            {
+                // 처음 생성된 경우 딕셔너리에 추가 + roomItem을 생성
+                if (roomDict.ContainsKey(room.Name) == false)
+                {
+                    GameObject _room = Instantiate(roomPrefab, scrollContent);
+                    // 룸 정보 표시
+                    // _room.GetComponentInChildren<TMP_Text>().text = room.Name;
+                    _room.GetComponent<RoomData>().RoomInfo = room;
+                    // 딕셔너리에 데이터 추가
+                    roomDict.Add(room.Name, _room);
+                }
+                else // 룸 정보를 갱신
+                {
+                    roomDict.TryGetValue(room.Name, out tempRoom);
+                    // tempRoom.GetComponentInChildren<TMP_Text>().text = room.Name;
+                    tempRoom.GetComponent<RoomData>().RoomInfo = room;
+                }
+            }
+        }
+    }
+
 #region UI_BUTTON_CALLBACK
     // Login Button Click Function
     public void OnLoginClick()
@@ -136,15 +182,6 @@ public class PhotonManager : MonoBehaviourPunCallbacks
         }
         // Room을 생성
         PhotonNetwork.CreateRoom(roomNameText.text, ro);
-    }
-
-    // Room List 수신 (룸 목록이 갱신 될 때마다 호출되는 Call Back Function)
-    public override void OnRoomListUpdate(List<RoomInfo> roomList)
-    {
-        foreach (RoomInfo room in roomList)
-        {
-            Debug.Log($"Room Name : {room.Name}, {room.PlayerCount}/{room.MaxPlayers}");
-        }
     }
 
 #endregion

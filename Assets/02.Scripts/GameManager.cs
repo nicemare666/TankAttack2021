@@ -9,10 +9,17 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
+    [Header("Room Info")]
     public TMP_Text roomNameText;
     public TMP_Text connectInfoText;
     public TMP_Text msgText;
     public Button exitButton;
+
+    [Header("Chatting UI")]
+    public TMP_Text chatListText;
+    public TMP_InputField msgIF;
+
+    private PhotonView pv;
 
     // Singleton 변수
     public static GameManager instance = null;
@@ -22,7 +29,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         instance = this;
 
         Vector3 pos = new Vector3(Random.Range(-200.0f, 200.0f),
-                                  50.0f,
+                                  30.0f,
                                   Random.Range(-200.0f, 200.0f));
         // 통신이 가능한 주인공 캐릭터(탱크) 생성
         PhotonNetwork.Instantiate("Tank", 
@@ -32,6 +39,8 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void Start()
     {
+        // pv = GetComponent<PhotonView>();
+        pv = photonView;
         SetRoomInfo();
     }
 
@@ -71,5 +80,18 @@ public class GameManager : MonoBehaviourPunCallbacks
         SetRoomInfo();
         string msg =$"\r\n<color=#ff0000>{otherPlayer.NickName}</color> is Left Room";
         msgText.text += msg;
+    }
+
+    public void OnSendClick()
+    {
+        string _msg = $"<color=#00ff00>[{PhotonNetwork.NickName}]</color>{msgIF.text}";
+
+        pv.RPC("SendChatMessage", RpcTarget.AllBufferedViaServer, _msg);
+    }
+
+    [PunRPC]
+    void SendChatMessage(string msg)
+    {
+        chatListText.text += $"\r\n{msg}";
     }
 }

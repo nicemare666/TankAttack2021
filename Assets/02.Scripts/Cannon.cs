@@ -18,7 +18,8 @@ public class Cannon : MonoBehaviour
         GameObject obj = Instantiate(expEffect,
                                      transform.position,
                                      transform.rotation);
-        Destroy(this);
         Destroy(obj, 4.0f);
+        Destroy(this.gameObject);
     }
+
 }
